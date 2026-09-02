@@ -1,0 +1,5 @@
+[wokwi]
+version = 1
+firmware = "Debug/nvme_controller.hex"
+elf = "Debug/nvme_controller.elf"
+vcdFile = "captures/nvme_controller.vcd"

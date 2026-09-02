@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "author": "Rahul",
+  "editor": "wokwi",
+
+  "parts": [
+    {
+      "type": "board-st-nucleo-c031c6",
+      "id": "nucleo",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+
+    {
+      "type": "wokwi-slide-switch",
+      "id": "slot1",
+      "top": -120,
+      "left": 380,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "slot2",
+      "top": -40,
+      "left": 380,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "slot3",
+      "top": 40,
+      "left": 380,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "slot4",
+      "top": 120,
+      "left": 380,
+      "attrs": {}
+    }
+  ],
+
+  "connections": [
+    [
+      "$serialMonitor:TX",
+      "nucleo:PA3",
+      "",
+      []
+    ],
+    [
+      "$serialMonitor:RX",
+      "nucleo:PA2",
+      "",
+      []
+    ],
+
+    [
+      "slot1:2",
+      "nucleo:PB2",
+      "green",
+      []
+    ],
+    [
+      "slot1:1",
+      "nucleo:GND",
+      "black",
+      []
+    ],
+
+    [
+      "slot2:2",
+      "nucleo:PA9",
+      "green",
+      []
+    ],
+    [
+      "slot2:1",
+      "nucleo:GND",
+      "black",
+      []
+    ],
+
+    [
+      "slot3:2",
+      "nucleo:PA15",
+      "green",
+      []
+    ],
+    [
+      "slot3:1",
+      "nucleo:GND",
+      "black",
+      []
+    ],
+
+    [
+      "slot4:2",
+      "nucleo:PB10",
+      "green",
+      []
+    ],
+    [
+      "slot4:1",
+      "nucleo:GND",
+      "black",
+      []
+    ]
+  ],
+
+  "dependencies": {}
+}
