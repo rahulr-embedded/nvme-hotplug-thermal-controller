@@ -15,15 +15,19 @@
   *
   ******************************************************************************
   */
-#include <stdio.h>
-
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "app_config.h"
+#include "app_i2c.h"
+#include "app_scheduler.h"
+#include "drive_i2c.h"
+#include "event_logger.h"
+#include "lcd_display.h"
+#include "slot_manager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,27 +46,23 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-ADC_HandleTypeDef hadc1;
 
 I2C_HandleTypeDef hi2c1;
-
-TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+static app_scheduler_t app_scheduler;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_ADC1_Init(void);
 static void MX_I2C1_Init(void);
-static void MX_TIM3_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-static void UART_PrintStartupMessage(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -99,13 +99,32 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ADC1_Init();
   MX_I2C1_Init();
-  MX_TIM3_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  UART_PrintStartupMessage();
+  uint32_t app_start_ms = HAL_GetTick();
+  bool lcd_ready;
+  app_i2c_result_t i2c_init_result;
 
+  EventLogger_Init(&huart2);
+  SlotManager_Init(app_start_ms);
+  i2c_init_result = AppI2C_Init(&hi2c1);
+  DriveI2C_Init(&hi2c1);
+  lcd_ready = (i2c_init_result == APP_I2C_OK) &&
+              LcdDisplay_Init(&hi2c1, app_start_ms);
+
+  EventLogger_PrintStartup();
+  if (!lcd_ready)
+  {
+    EventLogger_LogSystemError(
+        HAL_GetTick(),
+        (i2c_init_result == APP_I2C_OK) ?
+        "LCD_INIT_FAILED" : "I2C_BUS_INIT_FAILED");
+    EventLogger_LogI2CDiagnostic(HAL_GetTick(), &hi2c1, GPIOB);
+  }
+
+  EventLogger_LogStatus(HAL_GetTick());
+  AppScheduler_Init(&app_scheduler, HAL_GetTick());
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -115,6 +134,39 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    uint32_t now_ms = HAL_GetTick();
+    uint32_t due_tasks = AppScheduler_Poll(&app_scheduler,
+                                            now_ms);
+    bool slot_event_occurred = false;
+
+    if ((due_tasks & APP_TASK_SLOT_PROCESS) != 0U)
+    {
+      slot_event_record_t slot_events[NVME_SLOT_COUNT];
+      uint8_t slot_event_count;
+      uint8_t event_index;
+
+      slot_event_count = SlotManager_Process(now_ms,
+                                              slot_events,
+                                              NVME_SLOT_COUNT);
+
+      for (event_index = 0U;
+           event_index < slot_event_count;
+           event_index++)
+      {
+        EventLogger_LogSlotEvent(&slot_events[event_index]);
+        LcdDisplay_NotifySlotEvent(&slot_events[event_index]);
+      }
+
+      slot_event_occurred = slot_event_count > 0U;
+    }
+
+    DriveI2C_Process(now_ms);
+
+    if (slot_event_occurred ||
+        ((due_tasks & APP_TASK_LCD_UPDATE) != 0U))
+    {
+      LcdDisplay_Process(HAL_GetTick());
+    }
   }
   /* USER CODE END 3 */
 }
@@ -133,8 +185,10 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV1;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -144,7 +198,7 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV1;
@@ -153,63 +207,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief ADC1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_ADC1_Init(void)
-{
-
-  /* USER CODE BEGIN ADC1_Init 0 */
-
-  /* USER CODE END ADC1_Init 0 */
-
-  ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
-
-  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
-  */
-  hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
-  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.ScanConvMode = ADC_SCAN_SEQ_FIXED;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.LowPowerAutoPowerOff = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.NbrOfConversion = 1;
-  hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc1.Init.SamplingTimeCommon1 = ADC_SAMPLETIME_1CYCLE_5;
-  hadc1.Init.OversamplingMode = DISABLE;
-  hadc1.Init.TriggerFrequencyMode = ADC_TRIGGER_FREQ_HIGH;
-  if (HAL_ADC_Init(&hadc1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_0;
-  sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC1_Init 2 */
-
-  /* USER CODE END ADC1_Init 2 */
-
 }
 
 /**
@@ -228,7 +225,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x10805D88;
+  hi2c1.Init.Timing = 0x20303E5D;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -257,65 +254,6 @@ static void MX_I2C1_Init(void)
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
-
-}
-
-/**
-  * @brief TIM3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM3_Init(void)
-{
-
-  /* USER CODE BEGIN TIM3_Init 0 */
-
-  /* USER CODE END TIM3_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  /* USER CODE BEGIN TIM3_Init 1 */
-
-  /* USER CODE END TIM3_Init 1 */
-  htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 23;
-  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 99;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM3_Init 2 */
-
-  /* USER CODE END TIM3_Init 2 */
-  HAL_TIM_MspPostInit(&htim3);
 
 }
 
@@ -373,35 +311,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SLOT_POWER_EN_Pin|ALARM_LED_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, EVENT_STROBE_Pin|BUZZER_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : ACK_BUTTON_Pin */
-  GPIO_InitStruct.Pin = ACK_BUTTON_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(ACK_BUTTON_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pins : SLOT4_PRESENCE_Pin SLOT1_PRESENCE_Pin */
   GPIO_InitStruct.Pin = SLOT4_PRESENCE_Pin|SLOT1_PRESENCE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : SLOT1_COMM_OK_Pin SLOT2_COMM_OK_Pin SLOT3_COMM_OK_Pin SLOT4_COMM_OK_Pin */
-  GPIO_InitStruct.Pin = SLOT1_COMM_OK_Pin|SLOT2_COMM_OK_Pin|SLOT3_COMM_OK_Pin|SLOT4_COMM_OK_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : SLOT_POWER_EN_Pin ALARM_LED_Pin */
-  GPIO_InitStruct.Pin = SLOT_POWER_EN_Pin|ALARM_LED_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SLOT2_PRESENCE_Pin SLOT3_PRESENCE_Pin */
@@ -409,13 +322,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : EVENT_STROBE_Pin BUZZER_Pin */
-  GPIO_InitStruct.Pin = EVENT_STROBE_Pin|BUZZER_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI2_3_IRQn, 0, 0);
@@ -430,30 +336,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-static void UART_PrintStartupMessage(void)
-{
-    char msg[256];
-    int len;
-
-    len = snprintf(msg, sizeof(msg),
-        "\r\n"
-        "================================================\r\n"
-        "ARM NVMe Hot-Plug and Thermal Controller\r\n"
-        "Firmware Version: 1.0.0\r\n"
-        "Slots: 4\r\n"
-        "System Clock: %lu Hz\r\n"
-        "Initialization: SUCCESS\r\n"
-        "================================================\r\n",
-        (unsigned long)HAL_RCC_GetSysClockFreq());
-
-    if (len > 0)
-    {
-        HAL_UART_Transmit(&huart2,
-                          (uint8_t *)msg,
-                          (uint16_t)len,
-                          HAL_MAX_DELAY);
-    }
-}
 
 /* USER CODE END 4 */
 

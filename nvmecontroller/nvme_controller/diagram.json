@@ -2,7 +2,6 @@
   "version": 1,
   "author": "Rahul",
   "editor": "wokwi",
-
   "parts": [
     {
       "type": "board-st-nucleo-c031c6",
@@ -11,103 +10,242 @@
       "left": 0,
       "attrs": {}
     },
-
     {
       "type": "wokwi-slide-switch",
       "id": "slot1",
-      "top": -120,
-      "left": 380,
-      "attrs": {}
+      "top": 20,
+      "left": -360,
+      "attrs": { "bounce": "1" }
     },
     {
       "type": "wokwi-slide-switch",
       "id": "slot2",
-      "top": -40,
-      "left": 380,
-      "attrs": {}
+      "top": 120,
+      "left": -360,
+      "attrs": { "bounce": "1" }
     },
     {
       "type": "wokwi-slide-switch",
       "id": "slot3",
-      "top": 40,
-      "left": 380,
-      "attrs": {}
+      "top": 220,
+      "left": -360,
+      "attrs": { "bounce": "1" }
     },
     {
       "type": "wokwi-slide-switch",
       "id": "slot4",
+      "top": 320,
+      "left": -360,
+      "attrs": { "bounce": "1" }
+    },
+    {
+      "type": "wokwi-lcd2004",
+      "id": "lcd1",
+      "top": 470,
+      "left": -60,
+      "attrs": {
+        "pins": "i2c",
+        "i2cAddress": "0x27",
+        "background": "blue",
+        "color": "white"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rSclPullup",
+      "top": 390,
+      "left": 350,
+      "rotate": 90,
+      "attrs": { "value": "4700" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "rSdaPullup",
+      "top": 390,
+      "left": 400,
+      "rotate": 90,
+      "attrs": { "value": "4700" }
+    },
+    {
+      "type": "chip-mock-nvme-drive",
+      "id": "drive1",
+      "top": 20,
+      "left": 500,
+      "attrs": { "address": "80", "slotId": "1", "seed": "49" }
+    },
+    {
+      "type": "chip-mock-nvme-drive",
+      "id": "drive2",
       "top": 120,
-      "left": 380,
+      "left": 500,
+      "attrs": { "address": "81", "slotId": "2", "seed": "87" }
+    },
+    {
+      "type": "chip-mock-nvme-drive",
+      "id": "drive3",
+      "top": 220,
+      "left": 500,
+      "attrs": { "address": "82", "slotId": "3", "seed": "131" }
+    },
+    {
+      "type": "chip-mock-nvme-drive",
+      "id": "drive4",
+      "top": 320,
+      "left": 500,
+      "attrs": { "address": "83", "slotId": "4", "seed": "197" }
+    },
+    {
+      "type": "wokwi-logic-analyzer",
+      "id": "logic1",
+      "top": 500,
+      "left": 470,
       "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelPresence",
+      "top": -70,
+      "left": -430,
+      "attrs": { "text": "PRESENCE SWITCHES (LOW = INSERTED)" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelSlot1",
+      "top": 25,
+      "left": -500,
+      "attrs": { "text": "SLOT 1 / PB10" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelSlot2",
+      "top": 125,
+      "left": -500,
+      "attrs": { "text": "SLOT 2 / PA9" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelSlot3",
+      "top": 225,
+      "left": -500,
+      "attrs": { "text": "SLOT 3 / PA15" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelSlot4",
+      "top": 325,
+      "left": -500,
+      "attrs": { "text": "SLOT 4 / PB2" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelController",
+      "top": -70,
+      "left": 45,
+      "attrs": { "text": "STM32C031C6 CONTROLLER" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelDrives",
+      "top": -70,
+      "left": 500,
+      "attrs": { "text": "MOCK NVME I2C DRIVES" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelDrive1",
+      "top": 25,
+      "left": 635,
+      "attrs": { "text": "SLOT 1 / 0x50" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelDrive2",
+      "top": 125,
+      "left": 635,
+      "attrs": { "text": "SLOT 2 / 0x51" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelDrive3",
+      "top": 225,
+      "left": 635,
+      "attrs": { "text": "SLOT 3 / 0x52" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelDrive4",
+      "top": 325,
+      "left": 635,
+      "attrs": { "text": "SLOT 4 / 0x53" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelPullups",
+      "top": 350,
+      "left": 330,
+      "attrs": { "text": "I2C PULL-UPS (4.7k)" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelDisplay",
+      "top": 430,
+      "left": -60,
+      "attrs": { "text": "I2C LCD2004 / 0x27" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "labelAnalyzer",
+      "top": 460,
+      "left": 470,
+      "attrs": { "text": "LOGIC ANALYZER" }
     }
   ],
-
   "connections": [
-    [
-      "$serialMonitor:TX",
-      "nucleo:PA3",
-      "",
-      []
-    ],
-    [
-      "$serialMonitor:RX",
-      "nucleo:PA2",
-      "",
-      []
-    ],
+    ["$serialMonitor:TX", "nucleo:PA3", "", []],
+    ["$serialMonitor:RX", "nucleo:PA2", "", []],
 
-    [
-      "slot1:2",
-      "nucleo:PB2",
-      "green",
-      []
-    ],
-    [
-      "slot1:1",
-      "nucleo:GND",
-      "black",
-      []
-    ],
+    ["slot1:2", "nucleo:PB10", "green", []],
+    ["slot1:3", "nucleo:GND.1", "black", []],
+    ["slot2:2", "nucleo:PA9", "blue", []],
+    ["slot1:3", "slot2:3", "black", []],
+    ["slot3:2", "nucleo:PA15", "orange", []],
+    ["slot2:3", "slot3:3", "black", []],
+    ["slot4:2", "nucleo:PB2", "purple", []],
+    ["slot3:3", "slot4:3", "black", []],
 
-    [
-      "slot2:2",
-      "nucleo:PA9",
-      "green",
-      []
-    ],
-    [
-      "slot2:1",
-      "nucleo:GND",
-      "black",
-      []
-    ],
+    ["lcd1:VCC", "nucleo:5V.1", "red", []],
+    ["lcd1:GND", "nucleo:GND.1", "black", []],
+    ["lcd1:SCL", "nucleo:PB8", "yellow", []],
+    ["lcd1:SDA", "nucleo:PB9", "cyan", []],
 
-    [
-      "slot3:2",
-      "nucleo:PA15",
-      "green",
-      []
-    ],
-    [
-      "slot3:1",
-      "nucleo:GND",
-      "black",
-      []
-    ],
+    ["rSclPullup:1", "nucleo:3V3.1", "red", []],
+    ["rSclPullup:2", "nucleo:PB8", "yellow", []],
+    ["rSdaPullup:1", "nucleo:3V3.1", "red", []],
+    ["rSdaPullup:2", "nucleo:PB9", "cyan", []],
 
-    [
-      "slot4:2",
-      "nucleo:PB10",
-      "green",
-      []
-    ],
-    [
-      "slot4:1",
-      "nucleo:GND",
-      "black",
-      []
-    ]
+    ["drive1:VCC", "nucleo:3V3.1", "red", []],
+    ["drive1:GND", "nucleo:GND.3", "black", []],
+    ["drive1:SCL", "nucleo:PB8", "yellow", []],
+    ["drive1:SDA", "nucleo:PB9", "cyan", []],
+    ["drive1:VCC", "drive2:VCC", "red", []],
+    ["drive1:GND", "drive2:GND", "black", []],
+    ["drive1:SCL", "drive2:SCL", "yellow", []],
+    ["drive1:SDA", "drive2:SDA", "cyan", []],
+    ["drive2:VCC", "drive3:VCC", "red", []],
+    ["drive2:GND", "drive3:GND", "black", []],
+    ["drive2:SCL", "drive3:SCL", "yellow", []],
+    ["drive2:SDA", "drive3:SDA", "cyan", []],
+    ["drive3:VCC", "drive4:VCC", "red", []],
+    ["drive3:GND", "drive4:GND", "black", []],
+    ["drive3:SCL", "drive4:SCL", "yellow", []],
+    ["drive3:SDA", "drive4:SDA", "cyan", []],
+
+    ["logic1:D0", "nucleo:PB10", "green", []],
+    ["logic1:D1", "nucleo:PA9", "blue", []],
+    ["logic1:D2", "nucleo:PA2", "magenta", []],
+    ["logic1:D3", "drive4:SCL", "yellow", []],
+    ["logic1:D4", "drive4:SDA", "cyan", []],
+    ["logic1:GND", "drive4:GND", "black", []]
   ],
-
   "dependencies": {}
 }

@@ -1,0 +1,10 @@
+{
+  "name": "Mock NVMe I2C Drive",
+  "author": "Rahul",
+  "pins": [
+    "VCC",
+    "GND",
+    "SCL",
+    "SDA"
+  ]
+}

@@ -49,8 +49,6 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -59,8 +57,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define ACK_BUTTON_Pin GPIO_PIN_13
-#define ACK_BUTTON_GPIO_Port GPIOC
 #define RCC_OSCX_IN_Pin GPIO_PIN_14
 #define RCC_OSCX_IN_GPIO_Port GPIOC
 #define RCC_OSCX_OUT_Pin GPIO_PIN_15
@@ -77,23 +73,9 @@ void Error_Handler(void);
 #define SLOT1_PRESENCE_Pin GPIO_PIN_10
 #define SLOT1_PRESENCE_GPIO_Port GPIOB
 #define SLOT1_PRESENCE_EXTI_IRQn EXTI4_15_IRQn
-#define SLOT1_COMM_OK_Pin GPIO_PIN_11
-#define SLOT1_COMM_OK_GPIO_Port GPIOB
-#define SLOT2_COMM_OK_Pin GPIO_PIN_12
-#define SLOT2_COMM_OK_GPIO_Port GPIOB
-#define SLOT3_COMM_OK_Pin GPIO_PIN_13
-#define SLOT3_COMM_OK_GPIO_Port GPIOB
-#define SLOT4_COMM_OK_Pin GPIO_PIN_14
-#define SLOT4_COMM_OK_GPIO_Port GPIOB
-#define SLOT_POWER_EN_Pin GPIO_PIN_15
-#define SLOT_POWER_EN_GPIO_Port GPIOB
 #define SLOT2_PRESENCE_Pin GPIO_PIN_9
 #define SLOT2_PRESENCE_GPIO_Port GPIOA
 #define SLOT2_PRESENCE_EXTI_IRQn EXTI4_15_IRQn
-#define EVENT_STROBE_Pin GPIO_PIN_6
-#define EVENT_STROBE_GPIO_Port GPIOC
-#define BUZZER_Pin GPIO_PIN_7
-#define BUZZER_GPIO_Port GPIOC
 #define DEBUG_SWDIO_Pin GPIO_PIN_13
 #define DEBUG_SWDIO_GPIO_Port GPIOA
 #define DEBUG_SWCLK_Pin GPIO_PIN_14
@@ -101,8 +83,6 @@ void Error_Handler(void);
 #define SLOT3_PRESENCE_Pin GPIO_PIN_15
 #define SLOT3_PRESENCE_GPIO_Port GPIOA
 #define SLOT3_PRESENCE_EXTI_IRQn EXTI4_15_IRQn
-#define ALARM_LED_Pin GPIO_PIN_5
-#define ALARM_LED_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

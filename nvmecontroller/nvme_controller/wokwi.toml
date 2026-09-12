@@ -3,3 +3,7 @@ version = 1
 firmware = "Debug/nvme_controller.hex"
 elf = "Debug/nvme_controller.elf"
 vcdFile = "captures/nvme_controller.vcd"
+
+[[chip]]
+name = "mock-nvme-drive"
+binary = "chips/mock-nvme-drive.chip.wasm"
